@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  # APIサーバのコンテナ
+  api:
+    container_name: chefs-app-api
+    build:
+      context: .
+      dockerfile: ./infra/api/Dockerfile
+      target: php82
+    volumes:
+      - ./:/var/www
+    working_dir: /var/www/backend
+
+  # webサーバーのコンテナ
+  web:
+    container_name: chefs-app-web
+    build:
+      context: .
+      dockerfile: ./infra/web/Dockerfile
+    ports:
+      - "8000:80"
+    depends_on:
+      - api
+    volumes:
+      - ./:/var/www
+
+  # dbサーバーのコンテナ
+  db:
+    container_name: chefs-app-db
+    build:
+      context: .
+      dockerfile: ./infra/db/Dockerfile
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: chefs_app
+      MYSQL_USER: chefs_app_user
+      MYSQL_PASSWORD: chefs_app_password
+      MYSQL_ROOT_PASSWORD: chefs_app_password
+      TZ: "Asia/Tokyo"
+    volumes:
+      - ./infra/db/data:/var/lib/mysql
+      - ./infra/db/my.conf:/etc/mysql/conf.d/my.conf
+      - chefs-app-volume:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: chefs-app-phpmyadmin
+    depends_on:
+      - db
+    environment:
+      - PMA_HOSTS=db
+      - PMA_USER=chefs_app_user
+      - PMA_PASSWORD=chefs_app_password
+    ports:
+      - "8002:80"
+
+  mail:
+    image: axllent/mailpit:v1.8
+    container_name: chefs-app-mailpit
+    ports:
+      - 8025:8025
+      - 1025:1025
+
+volumes:
+  chefs-app-volume:
