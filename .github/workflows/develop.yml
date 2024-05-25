@@ -1,0 +1,91 @@
+name: Laravel
+
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "develop" ]
+  # 手動実行を許可する
+  workflow_dispatch:
+
+jobs:
+  laravel-tests:
+    environment:
+      name: develop
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: shivammathur/setup-php@15c43e89cdef867065b0213be354c2841860869e
+      with:
+        php-version: '8.2'
+    - uses: actions/checkout@v4
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+    - name: Install Dependencies
+      run: |
+        cd /var/www/backend
+        docker compose exec api composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+    - name: Generate key
+      run: |
+        cd /var/www/backend
+        docker compose exec api php artisan key:generate
+    - name: Directory Permissions
+      run: |
+        cd /var/www/backend
+        docker compose exec api chmod -R 777 storage bootstrap/cache
+    - name: Create Database
+      run: |
+        cd /var/www/backend
+        mkdir -p database
+        touch database/database.sqlite
+    - name: Execute tests (Unit and Feature tests) via PHPUnit/Pest
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: database/database.sqlite
+      run: |
+        cd /var/www/backend
+        docker compose exec api php artisan test
+
+  deploy-to-ec2:
+    environment:
+      name: develop
+
+    steps:
+    - name: Public IP
+      id: ip
+      uses: haythem/public-ip@v1.2
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # AWS CLIをインストールする
+    - name: AWS CLI install
+      run: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install --update
+        aws --version
+
+    # AWS CLIにキーを設定をする
+    - name: AWS set Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.AWS_REGION }}
+
+    - name: Open SSH
+      run: |
+        # SSHのセキュリティグループを開放する
+        aws ec2 authorize-security-group-ingress --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+
+    - name: Deploy
+      run: |
+        echo "${{ secrets.GIT_PRIVATE_KEY }}" > private_key
+        chmod 600 private_key
+        ssh -oStrictHostKeyChecking=no ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_HOST_NAME }} -i private_key "cd /var/www && git pull origin develop"
+
+    - name: Close SSH
+      run: |
+        aws ec2 revoke-security-group-ingress --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
