@@ -19,7 +19,7 @@ services:
       context: .
       dockerfile: ./infra/web/Dockerfile
     ports:
-      - "8000:80"
+      - "28000:80"
     depends_on:
       - api
     volumes:
@@ -32,7 +32,7 @@ services:
       context: .
       dockerfile: ./infra/db/Dockerfile
     ports:
-      - "3306:3306"
+      - "23306:3306"
     environment:
       MYSQL_DATABASE: chefs_app
       MYSQL_USER: chefs_app_user
@@ -54,14 +54,14 @@ services:
       - PMA_USER=chefs_app_user
       - PMA_PASSWORD=chefs_app_password
     ports:
-      - "8002:80"
+      - "28002:80"
 
   mail:
     image: axllent/mailpit:v1.8
     container_name: chefs-app-mailpit
     ports:
-      - 8025:8025
-      - 1025:1025
+      - 28025:8025
+      - 21025:1025
 
 volumes:
   chefs-app-volume:

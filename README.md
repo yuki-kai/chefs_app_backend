@@ -6,12 +6,14 @@
 
 ## 使用技術
 - APIサーバ
-  - Laravel 10
+  - Laravel 10.48.8
     - laravel/breeze api
   - PHP 8.2
 
 - webアプリのフロント
-  - Next.js
+  - Next.js 14.2.3
+    - AppRouter
+    - Material UI (MUI)
 
 - ネイティアプリのフロント
   - React Native を想定
@@ -21,3 +23,6 @@
 
 - その他
   - VSCode UIFlow
+    - 画面遷移図
+  - Mermaid
+    - ER図
