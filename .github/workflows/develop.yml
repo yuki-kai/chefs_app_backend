@@ -61,9 +61,11 @@ jobs:
         
     - name: Create Database
       run: |
-        cd /var/www/backend
-        mkdir -p database
-        touch database/database.sqlite
+        ssh -oStrictHostKeyChecking=no ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_HOST_NAME }} -i private_key << 'EOF'
+          cd /var/www/backend
+          mkdir -p database
+          touch database/database.sqlite
+        EOF
 
     - name: Execute tests (Unit and Feature tests) via PHPUnit/Pest
       env:
