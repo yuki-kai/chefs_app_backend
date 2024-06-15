@@ -3,8 +3,6 @@ name: Laravel
 on:
   push:
     branches: [ "develop" ]
-  pull_request:
-    branches: [ "develop" ]
   # 手動実行を許可する
   workflow_dispatch:
 
@@ -16,6 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Public IP
+      id: ip
+      uses: haythem/public-ip@v1.2
+
     - uses: shivammathur/setup-php@15c43e89cdef867065b0213be354c2841860869e
       with:
         php-version: '8.2'
@@ -23,6 +25,22 @@ jobs:
     
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+    # AWS CLIをインストールする
+    - name: AWS CLI install
+      run: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install --update
+        aws --version
+
+    # AWS CLIにキーを設定をする
+    - name: AWS set Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.AWS_REGION }}
 
     - name: Open SSH
       run: |
