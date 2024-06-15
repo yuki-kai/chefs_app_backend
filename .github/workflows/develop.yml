@@ -51,11 +51,13 @@ jobs:
       run: |
         echo "${{ secrets.GIT_PRIVATE_KEY }}" > private_key
         chmod 600 private_key
-        ssh -oStrictHostKeyChecking=no ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_HOST_NAME }} -i private_key
-        cd /var/www/backend
-        docker compose exec api composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-        docker compose exec api php artisan key:generate
-        docker compose exec api chmod -R 777 storage bootstrap/cache
+        ssh -oStrictHostKeyChecking=no ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_HOST_NAME }} -i private_key << 'EOF'
+          set -e
+          cd /var/www/backend
+          docker compose exec api composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+          docker compose exec api php artisan key:generate
+          docker compose exec api chmod -R 777 storage bootstrap/cache
+        EOF
         
     - name: Create Database
       run: |
@@ -68,9 +70,10 @@ jobs:
         DB_CONNECTION: sqlite
         DB_DATABASE: database/database.sqlite
       run: |
-        ssh -oStrictHostKeyChecking=no ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_HOST_NAME }} -i private_key
-        cd /var/www/backend
-        docker compose exec api php artisan test
+        ssh -oStrictHostKeyChecking=no ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_HOST_NAME }} -i private_key << 'EOF'
+          cd /var/www/backend
+          docker compose exec api php artisan test
+        EOF
 
     - name: Close SSH
       run: |
