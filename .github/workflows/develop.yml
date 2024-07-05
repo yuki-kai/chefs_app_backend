@@ -56,7 +56,7 @@ jobs:
           cd /var/www/backend
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
           php artisan key:generate
-          chmod -R 777 storage bootstrap/cache
+          sudo chmod -R 777 storage bootstrap/cache
         EOF
         
     - name: Create Database
