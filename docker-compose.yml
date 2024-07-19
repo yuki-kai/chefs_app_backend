@@ -11,6 +11,9 @@ services:
     volumes:
       - ./:/var/www
     working_dir: /var/www/backend
+    networks:
+      - front
+      - back
 
   # webサーバーのコンテナ
   web:
@@ -24,6 +27,8 @@ services:
       - api
     volumes:
       - ./:/var/www
+    networks:
+      - front
 
   # dbサーバーのコンテナ
   db:
@@ -43,6 +48,8 @@ services:
       - ./infra/db/data:/var/lib/mysql
       - ./infra/db/my.conf:/etc/mysql/conf.d/my.conf
       - chefs-app-volume:/var/lib/mysql
+    networks:
+      - back
 
   phpmyadmin:
     image: phpmyadmin
@@ -65,3 +72,9 @@ services:
 
 volumes:
   chefs-app-volume:
+
+networks:
+  front:
+    external: false
+  back:
+    external: false
