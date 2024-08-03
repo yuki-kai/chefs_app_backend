@@ -18,8 +18,6 @@ class DishController extends Controller
     {
         $dishes = $this->dishService->getDishes();
 
-        return response()->json([
-            'data' => $dishes
-        ], 200);
+        return response()->json($dishes, 200);
     }
 }
